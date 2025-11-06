@@ -1,4 +1,4 @@
-use crate::document::{Document, Line, Block};
+use crate::document::{Block, Document, Line};
 
 pub trait Parser {
     fn parse(&self, input: &str) -> Document;
@@ -22,9 +22,7 @@ impl Parser for PlainParser {
             })
             .collect::<Vec<_>>();
 
-        Document {
-            lines,
-        }
+        Document { lines }
     }
 }
 
@@ -36,7 +34,7 @@ mod tests {
     #[test]
     fn test_plain_parser_roundtrip() {
         let src = "x = 1\ny = 2\n x + y #= 3";
-        let parser = PlainParser{};
+        let parser = PlainParser {};
 
         let doc = parser.parse(src);
         let reconstructed = doc.reconstruct();

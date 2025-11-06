@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub struct Document {
     pub lines: Vec<Line>,
@@ -13,6 +15,31 @@ pub struct Line {
 pub enum Block {
     Text((usize, usize), String),
     Code((usize, usize), String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BlockId(usize);
+
+impl BlockId {
+    pub fn new(index: usize) -> Self {
+        Self(index)
+    }
+
+    pub fn index(self) -> usize {
+        self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CodeBlock<'a> {
+    pub id: BlockId,
+    pub content: &'a str,
+}
+
+#[derive(Debug, Clone)]
+pub struct CodeBlockUpdate {
+    pub id: BlockId,
+    pub content: String,
 }
 
 impl Document {
@@ -39,44 +66,51 @@ impl Document {
             .join("\n")
     }
 
-    pub fn code_blocks_mut(&mut self) -> Vec<&mut String> {
-        let mut refs = Vec::new();
+    pub fn evaluate_with<F>(&mut self, evaluator: F)
+    where
+        F: FnOnce(&[CodeBlock]) -> Vec<CodeBlockUpdate>,
+    {
+        let mut extracted: Vec<(BlockId, String)> = Vec::new();
+
         for line in &mut self.lines {
             for block in &mut line.blocks {
                 if let Block::Code(_, code) = block {
-                    refs.push(code);
+                    let id = BlockId::new(extracted.len());
+                    extracted.push((id, std::mem::take(code)));
                 }
             }
         }
-        refs
-    }
 
-    pub fn evaluate_with<F>(&mut self, mut evaluator: F)
-    where
-        F: FnMut(&mut [String]),
-    {
-        // extract code block texts
-        let mut code_texts: Vec<String> = self
-            .lines
+        if extracted.is_empty() {
+            return;
+        }
+
+        let view: Vec<CodeBlock> = extracted
             .iter()
-            .flat_map(|line| {
-                line.blocks.iter().filter_map(|b| match b {
-                    Block::Code(_, code) => Some(code.clone()),
-                    _ => None,
-                })
+            .map(|(id, content)| CodeBlock {
+                id: *id,
+                content: content.as_str(),
             })
             .collect();
 
-        // evaluate on contiguous slice
-        evaluator(&mut code_texts);
+        let updates = evaluator(&view);
+        let mut updates_map: HashMap<BlockId, String> = HashMap::new();
+        for update in updates {
+            updates_map.insert(update.id, update.content);
+        }
 
-        // write evaluated code blocks back
-        let mut i = 0;
+        let mut extracted_iter = extracted.into_iter();
         for line in &mut self.lines {
             for block in &mut line.blocks {
                 if let Block::Code(_, code) = block {
-                    *code = code_texts[i].clone();
-                    i += 1;
+                    let (id, original) = extracted_iter
+                        .next()
+                        .expect("mismatched number of code blocks during evaluation");
+                    if let Some(updated) = updates_map.remove(&id) {
+                        *code = updated;
+                    } else {
+                        *code = original;
+                    }
                 }
             }
         }
@@ -84,5 +118,4 @@ impl Document {
 }
 
 #[cfg(test)]
-mod tests {
-}
+mod tests {}

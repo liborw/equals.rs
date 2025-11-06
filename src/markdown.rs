@@ -138,9 +138,9 @@ mod tests {
                 actual, expected,
                 "❌ Expected text block `{expected}`, got `{actual}`"
             ),
-            Block::Code(_, actual) => panic!(
-                "❌ Expected text block `{expected}`, but found CODE block `{actual}`"
-            ),
+            Block::Code(_, actual) => {
+                panic!("❌ Expected text block `{expected}`, but found CODE block `{actual}`")
+            }
         }
     }
 
@@ -150,9 +150,9 @@ mod tests {
                 actual, expected,
                 "❌ Expected code block `{expected}`, got `{actual}`"
             ),
-            Block::Text(_, actual) => panic!(
-                "❌ Expected code block `{expected}`, but found TEXT block `{actual}`"
-            ),
+            Block::Text(_, actual) => {
+                panic!("❌ Expected code block `{expected}`, but found TEXT block `{actual}`")
+            }
         }
     }
 
@@ -266,4 +266,3 @@ Inline `2 + 2` works."#;
         );
     }
 }
-

@@ -1,33 +1,41 @@
 use std::fmt::Debug;
 
-use crate::lang::python::PythonLang;
-
+use crate::{
+    document::{CodeBlock, CodeBlockUpdate},
+    lang::python::PythonLang,
+};
 
 pub mod python;
 
 pub trait Language {
     fn name(&self) -> &str;
     fn eval_marker(&self) -> &str;
-    fn evaluate(&self, input: &mut [String]);
+    fn evaluate(&self, blocks: &[CodeBlock]) -> Vec<CodeBlockUpdate>;
 }
 
 impl Debug for dyn Language {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Language(name = {}, marker = {})", self.name(), self.eval_marker())
+        write!(
+            f,
+            "Language(name = {}, marker = {})",
+            self.name(),
+            self.eval_marker()
+        )
     }
 }
 
 pub fn get_language_spec(lang_str: &str) -> Option<Box<dyn Language>> {
-     match lang_str {
+    match lang_str {
         "python" => Some(Box::new(PythonLang::new())),
-        _ => None
+        _ => None,
     }
 }
 
-
 #[derive(Debug, PartialEq)]
 pub enum CodeLine<'a> {
-    Code { code: &'a str },
+    Code {
+        code: &'a str,
+    },
     Eval {
         code: &'a str,
         marker: &'a str,
@@ -109,7 +117,11 @@ where
             (after_marker.trim(), None)
         };
 
-        let result = if result_part.is_empty() { None } else { Some(result_part) };
+        let result = if result_part.is_empty() {
+            None
+        } else {
+            Some(result_part)
+        };
 
         if let Some(var) = extract_assignment(before_marker.trim()) {
             CodeLine::EvalAssignment {
@@ -131,7 +143,6 @@ where
         CodeLine::Code { code: trimmed }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -2,12 +2,12 @@ use clap::Parser as ClapParser;
 use std::fs;
 use std::io::{self, Read};
 
-mod lang;
 mod document;
+mod lang;
 mod markdown;
 mod parser;
 
-use crate::lang::{get_language_spec, Language};
+use crate::lang::{Language, get_language_spec};
 use crate::markdown::MarkdownParser;
 use crate::parser::{Parser, PlainParser};
 
@@ -45,13 +45,14 @@ fn main() -> io::Result<()> {
     };
 
     // language
-    let lang: Box<dyn Language> = get_language_spec(&args.language.unwrap_or("python".into())).expect("Unknown language");
+    let lang: Box<dyn Language> =
+        get_language_spec(&args.language.unwrap_or("python".into())).expect("Unknown language");
 
     // --- 2. Parse document
     let parser: Box<dyn Parser> = if args.markdown {
         Box::new(MarkdownParser::new())
     } else {
-        Box::new(PlainParser{})
+        Box::new(PlainParser {})
     };
     let mut doc = parser.parse(&input_text);
     doc.evaluate_with(|blocks| lang.evaluate(blocks));

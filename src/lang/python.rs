@@ -1,8 +1,10 @@
-use std::process::{Command, Stdio};
 use std::io::Write;
-use std::collections::HashMap;
+use std::process::{Command, Stdio};
 
-use crate::lang::{CodeLine, Language, split_line};
+use crate::{
+    document::{CodeBlock, CodeBlockUpdate},
+    lang::{CodeLine, Language, split_line},
+};
 
 pub struct PythonLang;
 
@@ -24,8 +26,33 @@ impl Language for PythonLang {
         MARKER
     }
 
-    fn evaluate(&self, input: &mut [String]) {
+    fn evaluate(&self, blocks: &[CodeBlock]) -> Vec<CodeBlockUpdate> {
+        if blocks.is_empty() {
+            return Vec::new();
+        }
 
+        let mut working: Vec<String> = blocks.iter().map(|b| b.content.to_string()).collect();
+        self.evaluate_in_place(&mut working);
+
+        blocks
+            .iter()
+            .zip(working.into_iter())
+            .filter_map(|(block, new_content)| {
+                if block.content == new_content {
+                    None
+                } else {
+                    Some(CodeBlockUpdate {
+                        id: block.id,
+                        content: new_content,
+                    })
+                }
+            })
+            .collect()
+    }
+}
+
+impl PythonLang {
+    fn evaluate_in_place(&self, input: &mut [String]) {
         let cloned_inputs: Vec<String> = input.to_vec();
 
         let lines: Vec<_> = cloned_inputs
@@ -43,7 +70,7 @@ impl Language for PythonLang {
                     if let Ok(idx) = idx_str.parse::<usize>() {
                         let value = parts.collect::<Vec<_>>().join(" ");
                         if let Some(s) = input.get_mut(idx) {
-                            let new_line =  lines[idx].reconstruct(&value);
+                            let new_line = lines[idx].reconstruct(&value);
                             *s = new_line;
                         }
                     }
@@ -70,17 +97,18 @@ fn extract_assigned_var(code: &str) -> Option<&str> {
         .filter(|s| !s.is_empty())
 }
 
-
 fn build_python_script(input: &[CodeLine]) -> String {
-    input.iter()
-         .enumerate()
-         .map(|(i, line)| {
-            match line {
-                CodeLine::Code { code } => code.to_string(),
-                CodeLine::Eval { code , .. } => format!("print('##RESULT:{}', {})", i, code),
-                CodeLine::EvalAssignment { var, code, ..} => format!("{}\nprint('##RESULT:{}', {})", code, i, var)
+    input
+        .iter()
+        .enumerate()
+        .map(|(i, line)| match line {
+            CodeLine::Code { code } => code.to_string(),
+            CodeLine::Eval { code, .. } => format!("print('##RESULT:{}', {})", i, code),
+            CodeLine::EvalAssignment { var, code, .. } => {
+                format!("{}\nprint('##RESULT:{}', {})", code, i, var)
             }
-        }).collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
         .join("\n")
 }
 
@@ -101,15 +129,30 @@ fn run_python(script: &str) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::document::{BlockId, CodeBlock};
 
     // Simple wrapper to call PythonLang::evaluate on &mut [String]
     fn eval_blocks(blocks: &mut [String]) {
         let lang = PythonLang;
-        lang.evaluate(blocks);
+        let snapshots: Vec<String> = blocks.iter().cloned().collect();
+        let code_blocks: Vec<CodeBlock> = snapshots
+            .iter()
+            .enumerate()
+            .map(|(idx, content)| CodeBlock {
+                id: BlockId::new(idx),
+                content: content.as_str(),
+            })
+            .collect();
+
+        let updates = lang.evaluate(&code_blocks);
+        for update in updates {
+            if let Some(slot) = blocks.get_mut(update.id.index()) {
+                *slot = update.content;
+            }
+        }
     }
 
     // Helper to split a multiline code snippet into Vec<String> lines
@@ -176,7 +219,10 @@ x + y + z
 
         let before = code_blocks.clone();
         eval_blocks(&mut code_blocks);
-        assert_eq!(before, code_blocks, "Unmarked lines should remain unchanged");
+        assert_eq!(
+            before, code_blocks,
+            "Unmarked lines should remain unchanged"
+        );
     }
 
     #[test]
