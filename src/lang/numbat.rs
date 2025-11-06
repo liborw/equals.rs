@@ -16,29 +16,40 @@ impl NumbatLang {
     }
 
     fn evaluate_in_place(&self, blocks: &mut [String]) {
-        let mut context: Vec<String> = Vec::new();
-        for idx in 0..blocks.len() {
-            let original = blocks[idx].clone();
-            let parsed = split_line(&original, MARKER, COMMENT, extract_assigned_var);
-            match &parsed {
-                CodeLine::Code { code } => context.push((*code).to_string()),
-                CodeLine::Eval { code, .. } => {
-                    let mut sequence = context.clone();
-                    sequence.push((*code).to_string());
-                    if let Some(result) = run_numbat(&sequence) {
-                        let new_line = parsed.reconstruct(result.trim());
-                        blocks[idx] = new_line;
+        let originals: Vec<String> = blocks.iter().cloned().collect();
+        let parsed: Vec<_> = originals
+            .iter()
+            .map(|line| split_line(line, MARKER, COMMENT, extract_assigned_var))
+            .collect();
+
+        let has_eval = parsed.iter().any(|line| {
+            matches!(
+                line,
+                CodeLine::Eval { .. } | CodeLine::EvalAssignment { .. }
+            )
+        });
+        if !has_eval {
+            return;
+        }
+
+        let script = build_numbat_expressions(&parsed);
+        if script.is_empty() {
+            return;
+        }
+
+        if let Some(output) = run_numbat(&script) {
+            for line in output.lines() {
+                if let Some(rest) = line.strip_prefix("##RESULT:") {
+                    let mut parts = rest.trim_start().splitn(2, ' ');
+                    let idx_str = parts.next().unwrap_or_default();
+                    let value = parts.next().unwrap_or("").trim();
+
+                    if let Ok(idx) = idx_str.parse::<usize>() {
+                        if let Some(target) = blocks.get_mut(idx) {
+                            let reconstructed = parsed[idx].reconstruct(value);
+                            *target = reconstructed;
+                        }
                     }
-                }
-                CodeLine::EvalAssignment { var, code, .. } => {
-                    let mut sequence = context.clone();
-                    sequence.push((*code).to_string());
-                    sequence.push((*var).to_string());
-                    if let Some(result) = run_numbat(&sequence) {
-                        let new_line = parsed.reconstruct(result.trim());
-                        blocks[idx] = new_line;
-                    }
-                    context.push((*code).to_string());
                 }
             }
         }
@@ -106,6 +117,40 @@ fn run_numbat(expressions: &[String]) -> Option<String> {
     }
 
     Some(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn build_numbat_expressions(lines: &[CodeLine]) -> Vec<String> {
+    let mut expressions = Vec::new();
+    for (idx, line) in lines.iter().enumerate() {
+        match line {
+            CodeLine::Code { code } => {
+                if !code.is_empty() {
+                    expressions.push((*code).to_string());
+                }
+            }
+            CodeLine::Eval { code, .. } => {
+                if !code.is_empty() {
+                    expressions.push(render_print(idx, code));
+                }
+            }
+            CodeLine::EvalAssignment { code, var, .. } => {
+                if !code.is_empty() {
+                    expressions.push((*code).to_string());
+                }
+                expressions.push(render_print(idx, var));
+            }
+        }
+    }
+    expressions
+}
+
+fn render_print(idx: usize, expr: &str) -> String {
+    let escaped = escape_quotes(expr);
+    format!("print(\"##RESULT:{} {{{}}}\")", idx, escaped)
+}
+
+fn escape_quotes(expr: &str) -> String {
+    expr.replace('"', "\\\"")
 }
 
 fn extract_assigned_var(code: &str) -> Option<&str> {

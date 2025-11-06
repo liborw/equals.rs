@@ -1,8 +1,8 @@
 # equals.rs plain-text Numbat demo
 
 let distance = 42 km
-let time = 3 h
-let speed = distance / time
+let duration = 3 h
+let speed = distance / duration
 speed #=
 
 let acceleration = 9.81 m / s^2
