@@ -2,9 +2,10 @@ use std::fmt::Debug;
 
 use crate::{
     document::{CodeBlock, CodeBlockUpdate},
-    lang::python::PythonLang,
+    lang::{numbat::NumbatLang, python::PythonLang},
 };
 
+pub mod numbat;
 pub mod python;
 
 pub trait Language {
@@ -27,6 +28,7 @@ impl Debug for dyn Language {
 pub fn get_language_spec(lang_str: &str) -> Option<Box<dyn Language>> {
     match lang_str {
         "python" => Some(Box::new(PythonLang::new())),
+        "numbat" => Some(Box::new(NumbatLang::new())),
         _ => None,
     }
 }
