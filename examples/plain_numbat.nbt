@@ -1,0 +1,9 @@
+# equals.rs plain-text Numbat demo
+
+let distance = 42 km
+let time = 3 h
+let speed = distance / time
+speed #=
+
+let acceleration = 9.81 m / s^2
+acceleration * 2 s #=
