@@ -118,4 +118,90 @@ impl Document {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    fn code_line(number: usize, content: &str) -> Line {
+        Line {
+            number,
+            blocks: vec![Block::Code((0, content.len()), content.to_string())],
+        }
+    }
+
+    #[test]
+    fn evaluate_with_applies_partial_updates() {
+        let mut doc = Document {
+            lines: vec![code_line(1, "x = 1"), code_line(2, "x + 1 #=")],
+        };
+
+        doc.evaluate_with(|blocks| {
+            assert_eq!(blocks.len(), 2);
+            assert_eq!(blocks[0].id.index(), 0);
+            assert_eq!(blocks[1].id.index(), 1);
+            assert_eq!(blocks[1].content, "x + 1 #=");
+
+            vec![CodeBlockUpdate {
+                id: blocks[1].id,
+                content: "x + 1 #= 2".into(),
+            }]
+        });
+
+        let line1 = &doc.lines[0].blocks[0];
+        let line2 = &doc.lines[1].blocks[0];
+
+        match line1 {
+            Block::Code(_, text) => assert_eq!(text, "x = 1"),
+            _ => panic!("expected code block for line 1"),
+        }
+
+        match line2 {
+            Block::Code(_, text) => assert_eq!(text, "x + 1 #= 2"),
+            _ => panic!("expected code block for line 2"),
+        }
+    }
+
+    #[test]
+    fn evaluate_with_keeps_original_when_no_updates() {
+        let mut doc = Document {
+            lines: vec![code_line(1, "print('hi')")],
+        };
+
+        doc.evaluate_with(|blocks| {
+            assert_eq!(blocks.len(), 1);
+            assert_eq!(blocks[0].content, "print('hi')");
+            Vec::new()
+        });
+
+        match &doc.lines[0].blocks[0] {
+            Block::Code(_, text) => assert_eq!(text, "print('hi')"),
+            _ => panic!("expected code block to remain unchanged"),
+        }
+    }
+
+    #[test]
+    fn evaluate_with_skips_when_no_code_blocks() {
+        let mut doc = Document {
+            lines: vec![Line {
+                number: 1,
+                blocks: vec![Block::Text((0, 4), "text".into())],
+            }],
+        };
+
+        let called = Cell::new(false);
+        doc.evaluate_with(|_| {
+            called.set(true);
+            Vec::new()
+        });
+
+        assert!(
+            !called.get(),
+            "evaluator should not be invoked when no code blocks exist"
+        );
+
+        match &doc.lines[0].blocks[0] {
+            Block::Text(_, text) => assert_eq!(text, "text"),
+            _ => panic!("text block should remain untouched"),
+        }
+    }
+}
