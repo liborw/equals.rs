@@ -81,6 +81,10 @@ cargo test --offline
 
 The test suite exercises document parsing, language evaluators, and the CLI language detection helper.
 
+## Continuous Integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `fmt`, `clippy`, `test`, and produces a release build artifact on every push/PR. Tagging a version (`v*`) also publishes a GitHub Release with the prebuilt Linux binary.
+
 ## Extending
 
 To add a new language:
