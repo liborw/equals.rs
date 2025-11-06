@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="equals.rs logo" width="240" height="140">
+  <img src="assets/logo.png" alt="equals.rs logo" width="240" height="140">
 </p>
 
 # equals.rs
