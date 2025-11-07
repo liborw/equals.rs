@@ -40,12 +40,46 @@ local function trim(value)
   return value:gsub("^%s+", ""):gsub("%s+$", "")
 end
 
+local function fallback_islist(tbl)
+  if type(tbl) ~= "table" then
+    return false
+  end
+
+  local count = 0
+  local max_index = 0
+  for k in pairs(tbl) do
+    if type(k) ~= "number" or k < 1 or math.floor(k) ~= k then
+      return false
+    end
+    if k > max_index then
+      max_index = k
+    end
+    count = count + 1
+  end
+
+  return max_index == count
+end
+
+local function is_list(value)
+  if type(value) ~= "table" then
+    return false
+  end
+
+  if vim.islist then
+    return vim.islist(value)
+  elseif vim.tbl_islist then
+    return vim.tbl_islist(value)
+  end
+
+  return fallback_islist(value)
+end
+
 local function to_set(value)
   if value == nil then
     return nil
   end
 
-  if vim.tbl_islist(value) then
+  if is_list(value) then
     local set = {}
     for _, item in ipairs(value) do
       if type(item) == "string" then
@@ -153,8 +187,16 @@ local function apply_highlight(bufnr)
 end
 
 local function ensure_highlight_groups()
-  vim.api.nvim_set_hl(0, config.highlight.marker_group, { default = true, link = "Define" })
-  vim.api.nvim_set_hl(0, config.highlight.result_group, { default = true, link = "String" })
+  vim.api.nvim_set_hl(
+    0,
+    config.highlight.marker_group,
+    { default = true, fg = "#f78c6c", ctermfg = 209, bold = true }
+  )
+  vim.api.nvim_set_hl(
+    0,
+    config.highlight.result_group,
+    { default = true, fg = "#9ece6a", ctermfg = 114, italic = true }
+  )
 end
 
 local function configure_highlights()

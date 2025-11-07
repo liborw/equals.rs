@@ -1,6 +1,6 @@
 # equals.nvim
 
-A lightweight local Neovim plugin that runs [`equals.rs`](../..) on the current buffer and highlights inline result markers. It is meant to live inside this repository (e.g. for `lazy.nvim`'s `dir` option) rather than as a standalone plugin.
+A lightweight Neovim plugin that runs [`equals.rs`](../..) on the current buffer and highlights inline result markers. Load it straight from GitHub via `liborw/equals.rs` and point your plugin manager's runtime path to `editors/neovim`.
 
 ## Features
 - Saves the current buffer to a temporary file, runs the `equals` CLI, and replaces the buffer with the evaluated output.
@@ -22,7 +22,8 @@ A lightweight local Neovim plugin that runs [`equals.rs`](../..) on the current 
 
 ```lua
 {
-  dir = "~/projects/equals/editors/neovim",
+  "liborw/equals.rs",
+  rtp = "editors/neovim",
   config = function()
     require("equals").setup({
       cmd = "/home/user/.cargo/bin/equals", -- optional override
@@ -35,14 +36,15 @@ A lightweight local Neovim plugin that runs [`equals.rs`](../..) on the current 
 
 ```lua
 use({
-  "~/projects/equals/editors/neovim",
+  "liborw/equals.rs",
+  rtp = "editors/neovim",
   config = function()
     require("equals").setup()
   end,
 })
 ```
 
-> Replace the `dir` with the absolute path to this repository on your machine.
+> Any plugin manager works as long as it adds `editors/neovim` to `runtimepath` (e.g. via `rtp = "editors/neovim"`).
 
 ## Usage
 
@@ -73,7 +75,7 @@ require("equals").setup({
 -- Pass `highlight.filetypes = nil` to highlight every buffer that contains `#=`.
 ```
 
-Tweak the highlight groups via `:highlight EqualsMarker` / `:highlight EqualsResult` or by linking them to other groups in your colorscheme.
+Tweak the highlight groups via `:highlight EqualsMarker` / `:highlight EqualsResult`. The defaults lean on a warm marker color and a soft green result to stand out even without extra theme configuration.
 
 ## Notes
 
