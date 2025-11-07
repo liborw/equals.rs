@@ -71,6 +71,10 @@ See the `examples/` directory for ready-to-run demos:
 
 Each example is callable exactly as shown in `examples/README.md`.
 
+## Editor Integrations
+
+- **Neovim** — a bundled plugin lives in [`editors/neovim`](editors/neovim/README.md). Add it to your runtime path (e.g. via `lazy.nvim`'s `dir` option) and run `:Equals` to evaluate the current buffer with automatic language/markdown flag detection plus `#=` highlighting.
+
 ## Testing
 
 ```bash
