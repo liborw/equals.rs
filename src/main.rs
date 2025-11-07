@@ -45,6 +45,12 @@ fn main() -> io::Result<()> {
         buf
     };
 
+    let markdown_guess = if args.markdown {
+        detect_markdown_language(&input_text).map(|s| s.to_string())
+    } else {
+        None
+    };
+
     let language_name = args
         .language
         .clone()
@@ -53,6 +59,7 @@ fn main() -> io::Result<()> {
                 .as_deref()
                 .and_then(|path| guess_language_from_path(Path::new(path)).map(|s| s.to_string()))
         })
+        .or(markdown_guess)
         .unwrap_or_else(|| "python".to_string());
 
     let lang: Box<dyn Language> = get_language_spec(&language_name)
@@ -86,6 +93,30 @@ fn guess_language_from_path(path: &Path) -> Option<&'static str> {
         "fend" | "fd" => Some("fend"),
         _ => None,
     }
+}
+
+fn detect_markdown_language(contents: &str) -> Option<&'static str> {
+    for line in contents.lines() {
+        let trimmed = line.trim_start();
+        if let Some(rest) = trimmed.strip_prefix("```") {
+            let ident = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                .collect::<String>()
+                .to_ascii_lowercase();
+            if ident.is_empty() {
+                continue;
+            }
+            match ident.as_str() {
+                "python" => return Some("python"),
+                "py" => return Some("python"),
+                "numbat" => return Some("numbat"),
+                "fend" => return Some("fend"),
+                _ => continue,
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -131,5 +162,32 @@ mod tests {
     #[test]
     fn unknown_extension_returns_none() {
         assert_eq!(guess_language_from_path(Path::new("notes.txt")), None);
+    }
+
+    #[test]
+    fn detect_markdown_language_from_fence() {
+        let doc = r#"
+Some text
+```python
+print("hi")
+```
+"#;
+        assert_eq!(detect_markdown_language(doc), Some("python"));
+    }
+
+    #[test]
+    fn detect_markdown_language_ignores_unknown() {
+        let doc = r#"
+```
+no language
+```
+```lolcode
+hi
+```
+```numbat
+let x = 2
+```
+"#;
+        assert_eq!(detect_markdown_language(doc), Some("numbat"));
     }
 }

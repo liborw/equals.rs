@@ -47,9 +47,11 @@ cat examples/plain_numbat.nbt | cargo run
 
 | Extension             | Language |
 |----------------------|----------|
-| `.py`, `.pyw`        | python   |
-| `.nb`, `.nbt`        | numbat   |
-| `.fend`, `.fd`       | fend     |
+| `.py`, `.pyw`        | python (plain text) |
+| `.nb`, `.nbt`        | numbat (plain text) |
+| `.fend`, `.fd`       | fend (plain text)   |
+
+When `--markdown` is set, the first fenced code block with a known language tag (e.g. <code>```python</code>) becomes the evaluator, so you usually don’t need to specify `--language`.
 
 Override detection any time with `--language <name>`.
 
