@@ -2,9 +2,10 @@ use std::fmt::Debug;
 
 use crate::{
     document::{CodeBlock, CodeBlockUpdate},
-    lang::{numbat::NumbatLang, python::PythonLang},
+    lang::{fend::FendLang, numbat::NumbatLang, python::PythonLang},
 };
 
+pub mod fend;
 pub mod numbat;
 pub mod python;
 
@@ -29,6 +30,7 @@ pub fn get_language_spec(lang_str: &str) -> Option<Box<dyn Language>> {
     match lang_str {
         "python" => Some(Box::new(PythonLang::new())),
         "numbat" => Some(Box::new(NumbatLang::new())),
+        "fend" => Some(Box::new(FendLang::new())),
         _ => None,
     }
 }

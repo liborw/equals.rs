@@ -1,0 +1,7 @@
+# equals.rs plain-text Fend demo
+
+print "Base value: "
+println 42 m/s
+
+(2 + 3) #=
+100 USD in EUR #=

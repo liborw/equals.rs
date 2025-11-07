@@ -4,12 +4,12 @@
 
 # equals.rs
 
-A command-line helper that evaluates annotated code inside plain text or Markdown documents. It keeps prose intact, rewrites only the marked lines (using `#=` by default), and supports Python and Numbat out of the box.
+A command-line helper that evaluates annotated code inside plain text or Markdown documents. It keeps prose intact, rewrites only the marked lines (using `#=` by default), and supports Python, Numbat, and Fend out of the box.
 
 ## Features
 
 - ✅ Evaluate inline or fenced code blocks without leaving your editor.
-- ✅ Detects the language automatically from file extensions (`.py`, `.pyw`, `.nbt`, `.nb`) or via `--language`.
+- ✅ Detects the language automatically from file extensions (`.py`, `.pyw`, `.nbt`, `.nb`, `.fend`, `.fd`) or via `--language`.
 - ✅ Understands Markdown fences and inline backticks, so prose stays untouched.
 - ✅ Uses language-specific runners: Python via `python3`, Numbat via the `numbat` CLI.
 - ✅ Produces minimal diffs by updating only lines that have changed outputs.
@@ -18,7 +18,8 @@ A command-line helper that evaluates annotated code inside plain text or Markdow
 
 - Rust 1.80+ (the crate targets Rust 2024).
 - Python 3 available on your `$PATH` (for Python snippets).
-- The [`numbat`](https://github.com/sharkdp/numbat) executable if you want to evaluate Numbat code.
+- The [`numbat`](https://github.com/sharkdp/numbat) executable for Numbat code.
+- The [`fend`](https://github.com/printfn/fend) CLI for Fend expressions.
 
 ## Building
 
@@ -35,6 +36,9 @@ cargo run -- --input examples/plain_python.py
 # Markdown mode, language forced to numbat
 cargo run -- --markdown --language numbat --input examples/markdown_numbat.md
 
+# Plain text Fend example (language inferred from .fend)
+cargo run -- --input examples/plain_fend.fend
+
 # Read from stdin / write to stdout
 cat examples/plain_numbat.nbt | cargo run
 ```
@@ -45,6 +49,7 @@ cat examples/plain_numbat.nbt | cargo run
 |----------------------|----------|
 | `.py`, `.pyw`        | python   |
 | `.nb`, `.nbt`        | numbat   |
+| `.fend`, `.fd`       | fend     |
 
 Override detection any time with `--language <name>`.
 
@@ -66,6 +71,7 @@ See the `examples/` directory for ready-to-run demos:
 
 - `plain_python.py` – basic Python workflow.
 - `plain_numbat.nbt` – physical units with Numbat.
+- `plain_fend.fend` – Fend calculator snippets.
 - `markdown_python.md` – Markdown + Python.
 - `markdown_numbat.md` – Markdown + Numbat.
 

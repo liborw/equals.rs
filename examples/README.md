@@ -10,11 +10,15 @@ These snippets demonstrate how to drive the CLI in both plain text and Markdown 
 - Source: `examples/plain_numbat.nbt`
 - Run: `cargo run -- --language numbat --input examples/plain_numbat.nbt`
 
-## 3. Markdown (Python)
+## 3. Plain Text (Fend)
+- Source: `examples/plain_fend.fend`
+- Run: `cargo run -- --language fend --input examples/plain_fend.fend`
+
+## 4. Markdown (Python)
 - Source: `examples/markdown_python.md`
 - Run: `cargo run -- --language python --markdown --input examples/markdown_python.md`
 
-## 4. Markdown (Numbat)
+## 5. Markdown (Numbat)
 - Source: `examples/markdown_numbat.md`
 - Run: `cargo run -- --language numbat --markdown --input examples/markdown_numbat.md`
 

@@ -83,6 +83,7 @@ fn guess_language_from_path(path: &Path) -> Option<&'static str> {
     match ext.as_str() {
         "py" | "pyw" => Some("python"),
         "nbt" | "nb" => Some("numbat"),
+        "fend" | "fd" => Some("fend"),
         _ => None,
     }
 }
@@ -112,6 +113,18 @@ mod tests {
         assert_eq!(
             guess_language_from_path(Path::new("calc.NB")),
             Some("numbat")
+        );
+    }
+
+    #[test]
+    fn detect_fend_extension() {
+        assert_eq!(
+            guess_language_from_path(Path::new("notes.fend")),
+            Some("fend")
+        );
+        assert_eq!(
+            guess_language_from_path(Path::new("notes.FD")),
+            Some("fend")
         );
     }
 
