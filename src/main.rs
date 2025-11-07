@@ -34,7 +34,11 @@ struct Args {
 }
 
 fn main() -> io::Result<()> {
-    let args = Args::parse();
+    let mut args = Args::parse();
+
+    if args.input.as_deref().map(is_markdown_path).unwrap_or(false) {
+        args.markdown = true;
+    }
 
     // --- 1. Read input
     let input_text = if let Some(path) = args.input.as_deref() {
@@ -93,6 +97,19 @@ fn guess_language_from_path(path: &Path) -> Option<&'static str> {
         "fend" | "fd" => Some("fend"),
         _ => None,
     }
+}
+
+fn is_markdown_path(path: &str) -> bool {
+    Path::new(path)
+        .extension()
+        .and_then(|os| os.to_str())
+        .map(|ext| matches_ignore_case(ext, &["md", "markdown", "mdown", "mkd"]))
+        .unwrap_or(false)
+}
+
+fn matches_ignore_case(candidate: &str, choices: &[&str]) -> bool {
+    let lower = candidate.to_ascii_lowercase();
+    choices.iter().any(|c| lower == *c)
 }
 
 fn detect_markdown_language(contents: &str) -> Option<&'static str> {
@@ -162,6 +179,14 @@ mod tests {
     #[test]
     fn unknown_extension_returns_none() {
         assert_eq!(guess_language_from_path(Path::new("notes.txt")), None);
+    }
+
+    #[test]
+    fn detects_markdown_path_variants() {
+        assert!(is_markdown_path("guide.md"));
+        assert!(is_markdown_path("guide.MarkDown"));
+        assert!(is_markdown_path("notes.mdown"));
+        assert!(!is_markdown_path("script.py"));
     }
 
     #[test]
