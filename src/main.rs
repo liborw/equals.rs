@@ -215,4 +215,38 @@ let x = 2
 "#;
         assert_eq!(detect_markdown_language(doc), Some("numbat"));
     }
+
+    #[test]
+    fn detect_markdown_language_is_case_insensitive() {
+        let doc = r#"
+Some intro
+```PyThOn
+x = 1
+```
+"#;
+        assert_eq!(detect_markdown_language(doc), Some("python"));
+    }
+
+    #[test]
+    fn detect_markdown_language_prefers_first_match() {
+        let doc = r#"
+```python
+pass
+```
+```numbat
+let x = 2
+```
+"#;
+        assert_eq!(detect_markdown_language(doc), Some("python"));
+    }
+
+    #[test]
+    fn detect_markdown_language_handles_indented_fences() {
+        let doc = r#"
+    ```fend
+    2 + 2
+    ```
+"#;
+        assert_eq!(detect_markdown_language(doc), Some("fend"));
+    }
 }
